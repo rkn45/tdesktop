@@ -42,11 +42,11 @@ jobs:
 
   windows:
     name: Windows
-    runs-on: windows-2022
+    runs-on: self-hosted
 
     strategy:
       matrix:
-        arch: [Win32, x64]
+        arch: x64
 
     env:
       UPLOAD_ARTIFACT: "false"
@@ -109,9 +109,9 @@ jobs:
 
       - name: Libraries.
         env:
-          GYP_MSVS_OVERRIDE_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\'
+          GYP_MSVS_OVERRIDE_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Community\'
           GYP_MSVS_VERSION: 2022
-        run: '%TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat skip-release silent'
+        run: '%TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat silent'
 
       - name: Read defines.
         shell: bash
@@ -139,20 +139,22 @@ jobs:
 
           call configure.bat ^
           ${{ matrix.arch }} ^
-          -D TDESKTOP_API_TEST=ON ^
+#          -D TDESKTOP_API_TEST=ON ^
+          -D TDESKTOP_API_ID=${{ secrets.API_ID }} ^
+          -D TDESKTOP_API_HASH=${{ secrets.API_HASH }} ^
           -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF ^
           -D DESKTOP_APP_NO_PDB=ON ^
           %TDESKTOP_BUILD_DEFINE% ^
           -DCMAKE_SYSTEM_VERSION=%SDK%
 
           cd ..\out
-          msbuild -m Telegram.sln /p:Configuration=Debug,Platform=${{ matrix.arch }},DebugSymbols=false,DebugType=none
+          msbuild -m Telegram.sln /p:Configuration=Release,Platform=${{ matrix.arch }},DebugSymbols=false,DebugType=none
 
       - name: Move artifact.
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           mkdir artifact
-          move %TBUILD%\%REPO_NAME%\out\Debug\Telegram.exe artifact/
+          move %TBUILD%\%REPO_NAME%\out\Release\Telegram.exe artifact/
       - uses: actions/upload-artifact@master
         name: Upload artifact.
         if: env.UPLOAD_ARTIFACT == 'true'
