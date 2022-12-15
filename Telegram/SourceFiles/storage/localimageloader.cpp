@@ -113,7 +113,7 @@ struct PreparedFileThumbnail {
 		const QString &filemime,
 		int64 filesize,
 		bool isSticker) {
-	prepared.name = isSticker ? u"thumb.webp"_q : u"thumb.jpg"_q;
+	prepared.name = isSticker ? qsl("thumb.webp") : qsl("thumb.jpg");
 	if (FileThumbnailUploadRequired(filemime, filesize)) {
 		const auto format = isSticker ? "WEBP" : "JPG";
 		auto buffer = QBuffer(&prepared.bytes);
@@ -606,21 +606,21 @@ bool FileLoadTask::CheckForSong(
 		const QByteArray &content,
 		std::unique_ptr<Ui::PreparedFileInformation> &result) {
 	static const auto mimes = {
-		u"audio/mp3"_q,
-		u"audio/m4a"_q,
-		u"audio/aac"_q,
-		u"audio/ogg"_q,
-		u"audio/flac"_q,
-		u"audio/opus"_q,
+		qstr("audio/mp3"),
+		qstr("audio/m4a"),
+		qstr("audio/aac"),
+		qstr("audio/ogg"),
+		qstr("audio/flac"),
+		qstr("audio/opus"),
 	};
 	static const auto extensions = {
-		u".mp3"_q,
-		u".m4a"_q,
-		u".aac"_q,
-		u".ogg"_q,
-		u".flac"_q,
-		u".opus"_q,
-		u".oga"_q,
+		qstr(".mp3"),
+		qstr(".m4a"),
+		qstr(".aac"),
+		qstr(".ogg"),
+		qstr(".flac"),
+		qstr(".opus"),
+		qstr(".oga"),
 	};
 	if (!filepath.isEmpty()
 		&& !CheckMimeOrExtensions(
@@ -648,13 +648,13 @@ bool FileLoadTask::CheckForVideo(
 		const QByteArray &content,
 		std::unique_ptr<Ui::PreparedFileInformation> &result) {
 	static const auto mimes = {
-		u"video/mp4"_q,
-		u"video/quicktime"_q,
+		qstr("video/mp4"),
+		qstr("video/quicktime"),
 	};
 	static const auto extensions = {
-		u".mp4"_q,
-		u".mov"_q,
-		u".webm"_q,
+		qstr(".mp4"),
+		qstr(".mov"),
+		qstr(".webm"),
 	};
 	if (!CheckMimeOrExtensions(filepath, result->filemime, mimes, extensions)) {
 		return false;
@@ -672,8 +672,8 @@ bool FileLoadTask::CheckForVideo(
 		return false;
 	}
 
-	if (filepath.endsWith(u".mp4"_q, Qt::CaseInsensitive)) {
-		result->filemime = u"video/mp4"_q;
+	if (filepath.endsWith(qstr(".mp4"), Qt::CaseInsensitive)) {
+		result->filemime = qstr("video/mp4");
 	}
 	result->media = std::move(media);
 	return true;
@@ -684,12 +684,12 @@ bool FileLoadTask::CheckForImage(
 		const QByteArray &content,
 		std::unique_ptr<Ui::PreparedFileInformation> &result) {
 	auto read = [&] {
-		if (filepath.endsWith(u".tgs"_q, Qt::CaseInsensitive)) {
+		if (filepath.endsWith(qstr(".tgs"), Qt::CaseInsensitive)) {
 			auto image = Lottie::ReadThumbnail(
 				Lottie::ReadContent(content, filepath));
 			const auto success = !image.isNull();
 			if (success) {
-				result->filemime = u"application/x-tgsticker"_q;
+				result->filemime = qstr("application/x-tgsticker");
 			}
 			return Images::ReadResult{
 				.image = std::move(image),
@@ -784,7 +784,7 @@ void FileLoadTask::process(Args &&args) {
 	} else if (!_content.isEmpty()) {
 		filesize = _content.size();
 		if (isVoice) {
-			filename = filedialogDefaultName(u"audio"_q, u".ogg"_q, QString(), true);
+			filename = filedialogDefaultName(qsl("audio"), qsl(".ogg"), QString(), true);
 			filemime = "audio/ogg";
 		} else {
 			if (_information) {
@@ -803,16 +803,16 @@ void FileLoadTask::process(Args &&args) {
 				fullimagebytes = fullimageformat = QByteArray();
 			}
 			if (filemime == "image/jpeg") {
-				filename = filedialogDefaultName(u"photo"_q, u".jpg"_q, QString(), true);
+				filename = filedialogDefaultName(qsl("photo"), qsl(".jpg"), QString(), true);
 			} else if (filemime == "image/png") {
-				filename = filedialogDefaultName(u"image"_q, u".png"_q, QString(), true);
+				filename = filedialogDefaultName(qsl("image"), qsl(".png"), QString(), true);
 			} else {
 				QString ext;
 				QStringList patterns = mimeType.globPatterns();
 				if (!patterns.isEmpty()) {
 					ext = patterns.front().replace('*', QString());
 				}
-				filename = filedialogDefaultName(u"file"_q, ext, QString(), true);
+				filename = filedialogDefaultName(qsl("file"), ext, QString(), true);
 			}
 		}
 	} else {
@@ -829,14 +829,14 @@ void FileLoadTask::process(Args &&args) {
 				if (ValidateThumbDimensions(fullimage.width(), fullimage.height())) {
 					filesize = -1; // Fill later.
 					filemime = Core::MimeTypeForName("image/jpeg").name();
-					filename = filedialogDefaultName(u"image"_q, u".jpg"_q, QString(), true);
+					filename = filedialogDefaultName(qsl("image"), qsl(".jpg"), QString(), true);
 				} else {
 					_type = SendMediaType::File;
 				}
 			}
 			if (_type == SendMediaType::File) {
 				filemime = Core::MimeTypeForName("image/png").name();
-				filename = filedialogDefaultName(u"image"_q, u".png"_q, QString(), true);
+				filename = filedialogDefaultName(qsl("image"), qsl(".png"), QString(), true);
 				{
 					QBuffer buffer(&_content);
 					fullimage.save(&buffer, "PNG");
@@ -898,8 +898,8 @@ void FileLoadTask::process(Args &&args) {
 				}
 			}
 			thumbnail = PrepareFileThumbnail(std::move(video->thumbnail));
-		} else if (filemime == u"application/x-tdesktop-theme"_q
-			|| filemime == u"application/x-tgtheme-tdesktop"_q) {
+		} else if (filemime == qstr("application/x-tdesktop-theme")
+			|| filemime == qstr("application/x-tgtheme-tdesktop")) {
 			goodThumbnail = Window::Theme::GeneratePreview(_content, _filepath);
 			if (!goodThumbnail.isNull()) {
 				QBuffer buffer(&goodThumbnailBytes);
@@ -942,8 +942,8 @@ void FileLoadTask::process(Args &&args) {
 				}
 				auto medium = (w > 320 || h > 320) ? fullimage.scaled(320, 320, Qt::KeepAspectRatio, Qt::SmoothTransformation) : fullimage;
 
-				const auto downscaled = (w > 1280 || h > 1280);
-				auto full = downscaled ? fullimage.scaled(1280, 1280, Qt::KeepAspectRatio, Qt::SmoothTransformation) : fullimage;
+				const auto downscaled = (w > 2160 || h > 2160);
+				auto full = downscaled ? fullimage.scaled(2160, 2160, Qt::KeepAspectRatio, Qt::SmoothTransformation) : fullimage;
 				if (downscaled) {
 					fullimagebytes = fullimageformat = QByteArray();
 				}
