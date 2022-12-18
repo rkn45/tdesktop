@@ -22,6 +22,7 @@
 [submodule "Telegram/lib_base"]
 	path = Telegram/lib_base
 	url = https://github.com/rkn45/lib_base.git
+	branch = master
 [submodule "Telegram/codegen"]
 	path = Telegram/codegen
 	url = https://github.com/forkgram/codegen.git
