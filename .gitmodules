@@ -100,3 +100,9 @@
 [submodule "Telegram/ThirdParty/cld3"]
 	path = Telegram/ThirdParty/cld3
 	url = https://github.com/google/cld3.git
+[submodule "Telegram/lib_base/"]
+	url = https://github.com/rkn45/lib_base.git
+[submodule "lib_base"]
+	path = lib_base
+	url = https://github.com/rkn45/lib_base.git
+	branch = master
