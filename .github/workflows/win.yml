@@ -109,8 +109,8 @@ jobs:
           echo "CACHE_KEY=$(sha256sum $TBUILD/$REPO_NAME/$PREPARE_PATH | awk '{ print $1 }')" >> $GITHUB_ENV
 
           echo "Configurate git for cherry-picks."
-          git config --global user.email "you@example.com"
-          git config --global user.name "Sample"
+          git config --global user.email "37614865+rkn45@users.noreply.github.com"
+          git config --global user.name "rkn45"
 
       - name: NuGet sources.
         run: |
