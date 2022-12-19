@@ -942,8 +942,8 @@ void FileLoadTask::process(Args &&args) {
 				}
 				auto medium = (w > 320 || h > 320) ? fullimage.scaled(320, 320, Qt::KeepAspectRatio, Qt::SmoothTransformation) : fullimage;
 
-				const auto downscaled = (w > 2560 || h > 2560);
-				auto full = downscaled ? fullimage.scaled(2560, 2560, Qt::KeepAspectRatio, Qt::SmoothTransformation) : fullimage;
+				const auto downscaled = (w > 1280 || h > 1280);
+				auto full = downscaled ? fullimage.scaled(1280, 1280, Qt::KeepAspectRatio, Qt::SmoothTransformation) : fullimage;
 				if (downscaled) {
 					fullimagebytes = fullimageformat = QByteArray();
 				}
