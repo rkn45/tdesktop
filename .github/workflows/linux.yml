@@ -60,7 +60,7 @@ jobs:
     strategy:
       matrix:
         defines:
-          - ""
+          - "CMAKE_INTERPROCEDURAL_OPTIMIZATION"
 
     env:
       UPLOAD_ARTIFACT: "false"
@@ -87,26 +87,6 @@ jobs:
           gcc --version
           ln -s /usr/src/Libraries
 
-          yum -y install epel-release
-          yum -y install wget p7zip
-
-          cd $REPO_NAME
-          cd ..
-
-          mkdir DesktopPrivate
-          cd DesktopPrivate
-
-          echo "#pragma once" > alpha_private.h
-          echo "#pragma once" > packer_private.h
-
-          echo '${{ secrets.ALPHA_PRIVATE }}' >> alpha_private.h
-          echo '${{ secrets.PACKER_PRIVATE }}' >> packer_private.h
-
-          cd ..
-
-          wget ${{ secrets.PACK_FILE }} -O p.7z
-          7za x p.7z -p${{ secrets.PACK_FILE_PASSWORD }}
-
       - name: Telegram Desktop build.
         run: |
           cd $REPO_NAME/Telegram
@@ -124,7 +104,6 @@ jobs:
           -D CMAKE_EXE_LINKER_FLAGS="-s" \
           -D TDESKTOP_API_ID=${{ secrets.API_ID }} \
           -D TDESKTOP_API_HASH=${{ secrets.API_HASH }} \
-          -D DESKTOP_APP_SPECIAL_TARGET=linux \
           -D DESKTOP_APP_DISABLE_CRASH_REPORTS=OFF \
           $DEFINE
 
