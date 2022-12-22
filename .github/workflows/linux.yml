@@ -60,7 +60,7 @@ jobs:
     strategy:
       matrix:
         defines:
-          - "CMAKE_INTERPROCEDURAL_OPTIMIZATION"
+          - ""
 
     env:
       UPLOAD_ARTIFACT: "false"
