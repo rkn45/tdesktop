@@ -46,7 +46,7 @@ jobs:
 
   windows:
     name: Windows
-    runs-on: windows-latest 
+    runs-on: self-hosted 
 
     strategy:
       matrix:
