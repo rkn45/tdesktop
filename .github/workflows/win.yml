@@ -1,24 +1,26 @@
 name: Windows.
 
 on:
-  #push:
-  #  paths-ignore:
-  #    - 'docs/**'
-  #    - '**.md'
-  #    - 'changelog.txt'
-  #    - 'LEGAL'
-  #    - 'LICENSE'
-  #    - '.github/**'
-  #    - '!.github/workflows/win.yml'
-  #    - 'lib/xdg/**'
-  #    - 'snap/**'
-  #    - 'Telegram/build/docker/**'
-  #    - 'Telegram/Resources/uwp/**'
-  #    - 'Telegram/SourceFiles/platform/linux/**'
-  #    - 'Telegram/SourceFiles/platform/mac/**'
-  #    - 'Telegram/Telegram/**'
-  #    - 'Telegram/configure.sh'
-  #    - 'Telegram/Telegram.plist'
+  release:
+    types: [published]
+  push:
+   paths-ignore:
+     - 'docs/**'
+     - '**.md'
+     - 'changelog.txt'
+     - 'LEGAL'
+     - 'LICENSE'
+     - '.github/**'
+     - '!.github/workflows/win.yml'
+     - 'lib/xdg/**'
+     - 'snap/**'
+     - 'Telegram/build/docker/**'
+     - 'Telegram/Resources/uwp/**'
+     - 'Telegram/SourceFiles/platform/linux/**'
+     - 'Telegram/SourceFiles/platform/mac/**'
+     - 'Telegram/Telegram/**'
+     - 'Telegram/configure.sh'
+     - 'Telegram/Telegram.plist'
   pull_request:
     paths-ignore:
       - 'docs/**'
@@ -38,36 +40,20 @@ on:
       - 'Telegram/configure.sh'
       - 'Telegram/Telegram.plist'
   workflow_dispatch:
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
-      - 'changelog.txt'
-      - 'LEGAL'
-      - 'LICENSE'
-      - '.github/**'
-      - '!.github/workflows/win.yml'
-      - 'lib/xdg/**'
-      - 'snap/**'
-      - 'Telegram/build/docker/**'
-      - 'Telegram/Resources/uwp/**'
-      - 'Telegram/SourceFiles/platform/linux/**'
-      - 'Telegram/SourceFiles/platform/mac/**'
-      - 'Telegram/Telegram/**'
-      - 'Telegram/configure.sh'
-      - 'Telegram/Telegram.plist'
+
 
 jobs:
 
   windows:
     name: Windows
-    runs-on: self-hosted
+    runs-on: [windows-latest, self-hosted]
 
     strategy:
       matrix:
         arch: [x64]
 
     env:
-      UPLOAD_ARTIFACT: "true"
+      UPLOAD_ARTIFACT: "false"
       ONLY_CACHE: "false"
       PREPARE_PATH: "Telegram/build/prepare/prepare.py"
 
@@ -127,7 +113,7 @@ jobs:
 
       - name: Libraries.
         env:
-          GYP_MSVS_OVERRIDE_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Community\'
+          GYP_MSVS_OVERRIDE_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\'
           GYP_MSVS_VERSION: 2022
         run: '%TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat silent'
 
@@ -172,9 +158,25 @@ jobs:
         run: |
           mkdir artifact
           move %TBUILD%\%REPO_NAME%\out\Release\Telegram.exe artifact/
+      
       - uses: actions/upload-artifact@master
         name: Upload artifact.
         if: env.UPLOAD_ARTIFACT == 'true'
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: artifact\
+          
+      - name: Compress.
+        if: (github.event_name == 'release')
+        run: |
+          copy %REPO_NAME%\out\Release\Telegram.exe .
+          tar -acf Telegram.zip Telegram.exe
+          
+      - name: Upload.
+        if: (github.event_name == 'release')
+        uses: svenstaro/upload-release-action@2.3.0
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./Telegram.zip
+          tag: ${{ github.event.release.tag_name }}
+          asset_name: Telegram.zip
