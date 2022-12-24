@@ -129,10 +129,10 @@ jobs:
           cp $filePath .
           tar -cJvf Telegram.tar.xz Telegram
 
-      - name: Deploy.
-        if: (github.event_name == 'release')
-        run: |
-          bash ci_start.sh &> /dev/null
+#       - name: Deploy.
+#         if: (github.event_name == 'release')
+#         run: |
+#           bash ci_start.sh &> /dev/null
 
       - name: Upload.
         if: (github.event_name == 'release')
