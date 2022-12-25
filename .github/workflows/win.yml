@@ -169,7 +169,7 @@ jobs:
       - name: Compress.
         if: (github.event_name == 'release')
         run: |
-          copy %REPO_NAME%\out\Release\Telegram.exe .
+          copy %TBUILD%\%REPO_NAME%\out\Release\Telegram.exe .
           tar -acf Telegram.zip Telegram.exe
           
       - name: Upload.
