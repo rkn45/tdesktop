@@ -26,7 +26,6 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "core/file_utilities.h"
 #include "ui/toast/toast.h"
 #include "ui/toasts/common_toasts.h"
-#include "ui/special_buttons.h"
 #include "ui/emoji_config.h"
 #include "ui/chat/attach/attach_prepare.h"
 #include "ui/chat/choose_theme_controller.h"
@@ -45,10 +44,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "ui/chat/choose_send_as.h"
 #include "ui/image/image.h"
 #include "ui/painter.h"
-#include "ui/special_buttons.h"
 #include "ui/controls/emoji_button.h"
 #include "ui/controls/send_button.h"
 #include "ui/controls/send_as_button.h"
+#include "ui/controls/silent_toggle.h"
 #include "inline_bots/inline_bot_result.h"
 #include "base/event_filter.h"
 #include "base/qt_signal_producer.h"
@@ -78,7 +77,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "data/stickers/data_custom_emoji.h"
 #include "history/history.h"
 #include "history/history_item.h"
-#include "history/history_message.h"
+#include "history/history_item_helpers.h" // GetErrorTextForSending.
 #include "history/history_drag_area.h"
 #include "history/history_inner_widget.h"
 #include "history/history_item_components.h"
@@ -873,7 +872,8 @@ HistoryWidget::HistoryWidget(
 		const auto lastKeyboardUsed = lastForceReplyReplied(FullMsgId(
 			action.history->peer->id,
 			action.replyTo));
-		if (action.options.scheduled) {
+		if (action.replaceMediaOf) {
+		} else if (action.options.scheduled) {
 			cancelReply(lastKeyboardUsed);
 			crl::on_main(this, [=, history = action.history] {
 				controller->showSection(
@@ -2769,7 +2769,7 @@ void HistoryWidget::updateControlsVisibility() {
 		if (_kbShown) {
 			_kbScroll->show();
 			_tabbedSelectorToggle->hide();
-			_botKeyboardHide->show();
+			showKeyboardHideButton();
 			_botKeyboardShow->hide();
 			_botCommandStart->hide();
 		} else if (_kbReplyTo) {
@@ -4575,6 +4575,11 @@ bool HistoryWidget::kbWasHidden() const {
 				_history->lastKeyboardHiddenId));
 }
 
+void HistoryWidget::showKeyboardHideButton() {
+	_botKeyboardHide->setVisible(!_peer->isUser()
+		|| !_keyboard->persistent());
+}
+
 void HistoryWidget::toggleKeyboard(bool manual) {
 	auto fieldEnabled = canWriteMessage() && !_showAnimation;
 	if (_kbShown || _kbReplyTo) {
@@ -4626,7 +4631,7 @@ void HistoryWidget::toggleKeyboard(bool manual) {
 			_history->lastKeyboardHiddenId = 0;
 		}
 	} else if (fieldEnabled) {
-		_botKeyboardHide->show();
+		showKeyboardHideButton();
 		_botKeyboardShow->hide();
 		_kbScroll->show();
 		_kbShown = true;
@@ -5775,7 +5780,7 @@ void HistoryWidget::updateBotKeyboard(History *h, bool force) {
 				if (hasMarkup) {
 					_kbScroll->show();
 					_tabbedSelectorToggle->hide();
-					_botKeyboardHide->show();
+					showKeyboardHideButton();
 				} else {
 					_kbScroll->hide();
 					_tabbedSelectorToggle->show();
@@ -6253,7 +6258,7 @@ void HistoryWidget::checkPinnedBarState() {
 	_pinnedBar = std::make_unique<Ui::PinnedBar>(this, [=] {
 		return controller()->isGifPausedAtLeastFor(
 			Window::GifPauseReason::Any);
-	});
+	}, controller()->gifPauseLevelChanged());
 	auto pinnedRefreshed = Info::Profile::SharedMediaCountValue(
 		_peer,
 		MsgId(0), // topicRootId
@@ -7519,20 +7524,44 @@ void HistoryWidget::drawField(Painter &p, const QRect &rect) {
 	p.setInactive(
 		controller()->isGifPausedAtLeastFor(Window::GifPauseReason::Any));
 	p.fillRect(myrtlrect(0, backy, width(), backh), st::historyReplyBg);
+
+	const auto media = (!drawWebPagePreview && drawMsgText)
+		? drawMsgText->media()
+		: nullptr;
+	const auto hasPreview = media && media->hasReplyPreview();
+	const auto preview = hasPreview ? media->replyPreview() : nullptr;
+	const auto spoilered = preview && media->hasSpoiler();
+	if (!spoilered) {
+		_replySpoiler = nullptr;
+	} else if (!_replySpoiler) {
+		_replySpoiler = std::make_unique<Ui::SpoilerAnimation>([=] {
+			updateField();
+		});
+	}
+
 	if (_editMsgId || _replyToId || (!hasForward && _kbReplyTo)) {
+		const auto now = crl::now();
+		const auto paused = p.inactive();
 		auto replyLeft = st::historyReplySkip;
 		(_editMsgId ? st::historyEditIcon : st::historyReplyIcon).paint(p, st::historyReplyIconPosition + QPoint(0, backy), width());
 		if (!drawWebPagePreview) {
 			if (drawMsgText) {
-				if (drawMsgText->media() && drawMsgText->media()->hasReplyPreview()) {
-					if (const auto image = drawMsgText->media()->replyPreview()) {
+				if (hasPreview) {
+					if (preview) {
 						auto to = QRect(replyLeft, backy + st::msgReplyPadding.top(), st::msgReplyBarSize.height(), st::msgReplyBarSize.height());
-						p.drawPixmap(to.x(), to.y(), image->pixSingle(
-							image->size() / style::DevicePixelRatio(),
+						p.drawPixmap(to.x(), to.y(), preview->pixSingle(
+							preview->size() / style::DevicePixelRatio(),
 							{
 								.options = Images::Option::RoundSmall,
 								.outer = to.size(),
 							}));
+						if (_replySpoiler) {
+							Ui::FillSpoilerRect(
+								p,
+								to,
+								Ui::DefaultImageSpoiler().frame(
+									_replySpoiler->index(now, paused)));
+						}
 					}
 					replyLeft += st::msgReplyBarSize.height() + st::msgReplyBarSkip - st::msgReplyBarSize.width() - st::msgReplyBarPos.x();
 				}
@@ -7550,8 +7579,8 @@ void HistoryWidget::drawField(Painter &p, const QRect &rect) {
 					.availableWidth = width() - replyLeft - _fieldBarCancel->width() - st::msgReplyPadding.right(),
 					.palette = &st::historyComposeAreaPalette,
 					.spoiler = Ui::Text::DefaultSpoilerCache(),
-					.now = crl::now(),
-					.paused = p.inactive(),
+					.now = now,
+					.paused = paused,
 					.elisionLines = 1,
 				});
 			} else {
