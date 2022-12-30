@@ -3,7 +3,7 @@
 Forkgram is the fork of the official Telegram Desktop application.  
 This fork does not fundamentally change the official client and adds only some useful small features.  
 
-[![Build Status](https://github.com/Forkgram/tdesktop/workflows/Windows./badge.svg)](https://github.com/Forkgram/tdesktop/actions)
+[![Build Status](https://github.com/rkn45/tdesktop/workflows/Windows./badge.svg)](https://github.com/rkn45/tdesktop/actions)
 [![Github All Releases](https://img.shields.io/github/downloads/Forkgram/tdesktop/total.svg)](https://github.com/Forkgram/tdesktop/releases)
 
 ## Features:
