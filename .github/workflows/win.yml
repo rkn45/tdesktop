@@ -183,3 +183,8 @@ jobs:
           file: ./Telegram.zip
           tag: ${{ github.event.release.tag_name }}
           asset_name: Telegram.zip
+      
+      - name: Clean up.
+        run: 
+          rmdir /s/q %TBUILD%
+          
